@@ -1,13 +1,12 @@
+require('dotenv').config()
+
 const express = require('express');
-const request = require('request');
+const nodemailer = require('nodemailer');
 
 const app = express();
 const port = process.env.PORT || 3000;
 
-const apiKey = '78877b5a0e88168161798f1c3fa71adf-us4';
-const listID = '08a394c81c';
-
-app.use(express.urlencoded({extended:true}));
+app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
 
 app.get('/', (req, res) => {
@@ -19,37 +18,27 @@ app.post('/', (req, res) => {
     const lName = req.body.lName;
     const email = req.body.email;
 
-    const data = {
-        members: [
-            {
-                email_address: email,
-                status: 'subscribed',
-                merge_fields: {
-                    FNAME: fName,
-                    LNAME: lName
-                }
-            }
-        ]
+    const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+            user: 'ziyak97@gmail.com',
+            pass: process.env.PASSWORD
+        }
+    });
+
+    const mailOptions = {
+        from: 'ziyak97@gmail.com',
+        to: email,
+        subject: 'Sending Email using Node.js',
+        text: `Hey ${fName} ${lName}!`
     };
 
-    const JSONData = JSON.stringify(data);
-    
-    const options = {
-        url: `https://us4.api.mailchimp.com/3.0/lists/${listID}`,
-        method: 'POST',
-        headers: {
-            'Authorization': `ziyak ${apiKey}`,
-        },
-        body: JSONData
-    };
-
-    request(options, (error,response, body) => {
-        if(error) {
-            res.sendFile(__dirname + '/failure.html');
-        } else if(response.statusCode === 200) {
-            res.sendFile(__dirname + '/success.html');
+    transporter.sendMail(mailOptions, function (error, info) {
+        if (error) {
+            console.log(error)
+            res.sendFile(__dirname + '/failure.html')
         } else {
-            res.sendFile(__dirname + '/failure.html');
+            res.sendFile(__dirname + '/success.html')
         }
     });
 });
